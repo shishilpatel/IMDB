@@ -19,7 +19,7 @@ class IIMDBController extends Controller {
     }
 
     public function search(Request $request) {
-        if (isset($request->title)) {
+        if (isset($request->name)) {
             $result = iIMDB::where('title', $request->name)->get()->toArray();
 
             if (count($result) > 0) {

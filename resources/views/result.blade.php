@@ -8,8 +8,7 @@
                 <div class="card-header">Search Movie</div>                
                 <div class="card-body ">
                     <hgroup class="mb20">
-                        <h1>Search Results</h1>
-                        <h2 class="lead"><strong class="text-danger">3</strong> results were found for the search for <strong class="text-danger">Lorem</strong></h2>								
+                        <h1>Search Results</h1>                        
                     </hgroup>
                     @for($i = 0;$i< count($result);$i++)
                     <section class="col-xs-12 col-sm-6 col-md-12">

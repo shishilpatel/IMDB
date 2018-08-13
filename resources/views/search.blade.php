@@ -12,6 +12,13 @@
                         <div class="form-group col-md-5">
                             <label class="control-label" for="name">Title</label>
                             <input type="text" name="name" id="name" class="form-control" placeholder="Search by Movie Name"/>
+                            <select name="type">
+                                <option value="">---Select Type--</option>
+                                <option value="">Movie</option>
+                                <option value="">TV</option>
+                                <option value="">Episodes</option>
+                                <option value="">Game</option>                                
+                            </select>
                         </div>
                         <div class="form-group col-md-5">
                             <label class="control-label" for="y">Year:</label>

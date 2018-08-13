@@ -4,8 +4,8 @@ namespace App\Http\Controllers;
 
 use App\iIMDB;
 use Illuminate\Http\Request;
-use IMDB;
 use Illuminate\Support\Facades\DB;
+use IMDB;
 
 class IIMDBController extends Controller {
 
@@ -15,50 +15,65 @@ class IIMDBController extends Controller {
      * @return \Illuminate\Http\Response
      */
     public function index() {
+
         return view('search');
     }
 
+    public function test() {
+        $IMDB = new IMDB("Final Destination");
+        dd($IMDB->getAll());
+        //return view('search');
+    }
+
     public function search(Request $request) {
-        if (isset($request->name)) {
+
+        if (isset($request->name) && !empty($request->name)) {
+
             $result = iIMDB::where('title', $request->name)->get()->toArray();
 
             if (count($result) > 0) {
                 $data = [
-                    'movieID' => $result['0']['movieID'],
-                    'title' => $result['0']['title'],
-                    'release_year' => $result['0']['release_year'],
-                    'rating' => $result['0']['rating'],
-                    'genre' => $result['0']['genre'],
-                    'URL' => $result['0']['URL']
+                    0 => [
+                        'movieID' => $result['0']['movieID'],
+                        'title' => $result['0']['title'],
+                        'release_year' => $result['0']['release_year'],
+                        'rating' => $result['0']['rating'],
+                        'genre' => $result['0']['genre'],
+                        'URL' => $result['0']['URL']
+                    ]
                 ];
                 return view('result')->with('result', $data);
             } else {
-                $IMDB = new IMDB($request->name);
+                if (isset($request->type) && !empty($request->type)) {
+                    $IMDB = new IMDB($request->name, $request->type);
+                } else {
+                    $IMDB = new IMDB($request->name);
+                }
+
 
                 if ($IMDB->isReady) {
                     $UR = array_filter(explode('/', $IMDB->getUrl()));
                     $data = [
-                        'movieID' => 123,
-                        'title' => $IMDB->getTitle($bForceLocal = false),
-                        'release_year' => $IMDB->getYear(),
-                        'rating' => $IMDB->getRating(),
-                        'genre' => $IMDB->getGenre(),
-                        'URL' => $IMDB->getPoster($sSize = 'big', $bDownload = false)
+                        0 => [
+                            'movieID' => 123,
+                            'title' => $IMDB->getTitle($bForceLocal = false),
+                            'release_year' => $IMDB->getYear(),
+                            'rating' => $IMDB->getRating(),
+                            'genre' => $IMDB->getGenre(),
+                            'URL' => $IMDB->getPoster($sSize = 'big', $bDownload = false)
+                        ]
                     ];
 
                     DB::table('imdb')->insert($data);
                     //$data->save();
-
-                    $result = $IMDB->getAll();
-                    dd($result);
-
 
                     return view('result')->with('result', $data);
                 } else {
                     echo 'Movie not found. 😞';
                 }
             }
-        } else if (isset($request->year)) {
+        } else if (isset($request->year) && !empty($request->year)) {
+
             $result = iIMDB::whereBetween('release_year', array($request->year - 1, $request->year + 1))->get()->toArray();
             //dd($result);
             if (count($result) > 0) {
@@ -75,7 +90,8 @@ class IIMDBController extends Controller {
             } else {
                 echo 'Movie not found. 😞';
             }
-        } else if (isset($request->rating)) {
+        } else if (isset($request->rating) && !empty($request->rating)) {
+
             $result = iIMDB::where('rating', $request->rating)->get()->toArray();
 
             if (count($result) > 0) {
@@ -91,7 +107,8 @@ class IIMDBController extends Controller {
             } else {
                 echo 'Movie not found. 😞';
             }
-        } else if (isset($request->genre)) {
+        } else if (isset($request->genre) && !empty($request->genre)) {
+
             $result = iIMDB::where('genre', 'like', '%' . $request->genre . '%')->get()->toArray();
 
             if (count($result) > 0) {
@@ -107,6 +124,8 @@ class IIMDBController extends Controller {
             } else {
                 echo 'Movie not found. 😞';
             }
+        } else {
+            
         }
     }
 

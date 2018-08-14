@@ -2,191 +2,112 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\Movie;
 use App\iIMDB;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use IMDB;
+use Illuminate\Support\Facades\DB;
 
-class IIMDBController extends Controller {
+class IIMDBController extends Controller
+{
 
     /**
      * Display a listing of the resource.
      *
      * @return \Illuminate\Http\Response
      */
-    public function index() {
 
-        return view('search');
+    public function index()
+    {
+        $movie = iIMDB::all();
+        return Movie::collection($movie);
     }
 
-    public function test() {
-        $IMDB = new IMDB("Final Destination");
-        dd($IMDB->getAll());
-        //return view('search');
-    }
+    public function searchByTitle($title)
+    {
+        //dd($title);
+        $result = iIMDB::where('title', $title)->get();
 
-    public function search(Request $request) {
-
-        if (isset($request->name) && !empty($request->name)) {
-
-            $result = iIMDB::where('title', $request->name)->get()->toArray();
-
-            if (count($result) > 0) {
-                $data = [
-                    0 => [
-                        'movieID' => $result['0']['movieID'],
-                        'title' => $result['0']['title'],
-                        'release_year' => $result['0']['release_year'],
-                        'rating' => $result['0']['rating'],
-                        'genre' => $result['0']['genre'],
-                        'URL' => $result['0']['URL']
-                    ]
-                ];
-                return view('result')->with('result', $data);
-            } else {
-                if (isset($request->type) && !empty($request->type)) {
-                    $IMDB = new IMDB($request->name, $request->type);
-                } else {
-                    $IMDB = new IMDB($request->name);
-                }
-
-
-                if ($IMDB->isReady) {
-                    $UR = array_filter(explode('/', $IMDB->getUrl()));
-                    $data = [
-                        0 => [
-                            'movieID' => 123,
-                            'title' => $IMDB->getTitle($bForceLocal = false),
-                            'release_year' => $IMDB->getYear(),
-                            'rating' => $IMDB->getRating(),
-                            'genre' => $IMDB->getGenre(),
-                            'URL' => $IMDB->getPoster($sSize = 'big', $bDownload = false)
-                        ]
-                    ];
-
-                    DB::table('imdb')->insert($data);
-                    //$data->save();
-
-                    return view('result')->with('result', $data);
-                } else {
-                    echo 'Movie not found. 😞';
-                }
-            }
-        } else if (isset($request->year) && !empty($request->year)) {
-
-            $result = iIMDB::whereBetween('release_year', array($request->year - 1, $request->year + 1))->get()->toArray();
-            //dd($result);
-            if (count($result) > 0) {
-                $dynamic_array = [];
-                foreach ($result as $single_result_key => $single_result_value) {
-                    $dynamic_array[$single_result_key]['movieID'] = $single_result_value['movieID'];
-                    $dynamic_array[$single_result_key]['title'] = $single_result_value['title'];
-                    $dynamic_array[$single_result_key]['release_year'] = $single_result_value['release_year'];
-                    $dynamic_array[$single_result_key]['rating'] = $single_result_value['rating'];
-                    $dynamic_array[$single_result_key]['genre'] = $single_result_value['genre'];
-                    $dynamic_array[$single_result_key]['URL'] = $single_result_value['URL'];
-                }
-                return view('result')->with('result', $dynamic_array);
-            } else {
-                echo 'Movie not found. 😞';
-            }
-        } else if (isset($request->rating) && !empty($request->rating)) {
-
-            $result = iIMDB::where('rating', $request->rating)->get()->toArray();
-
-            if (count($result) > 0) {
-                $data = [
-                    'movieID' => $result['0']['movieID'],
-                    'title' => $result['0']['title'],
-                    'release_year' => $result['0']['release_year'],
-                    'rating' => $result['0']['rating'],
-                    'genre' => $result['0']['genre'],
-                    'URL' => $result['0']['URL']
-                ];
-                return view('result')->with('result', $data);
-            } else {
-                echo 'Movie not found. 😞';
-            }
-        } else if (isset($request->genre) && !empty($request->genre)) {
-
-            $result = iIMDB::where('genre', 'like', '%' . $request->genre . '%')->get()->toArray();
-
-            if (count($result) > 0) {
-                $data = [
-                    'movieID' => $result['0']['movieID'],
-                    'title' => $result['0']['title'],
-                    'release_year' => $result['0']['release_year'],
-                    'rating' => $result['0']['rating'],
-                    'genre' => $result['0']['genre'],
-                    'URL' => $result['0']['URL']
-                ];
-                return view('result')->with('result', $data);
-            } else {
-                echo 'Movie not found. 😞';
-            }
+        if (count($result) > 0) {
+            return Movie::collection($result);
         } else {
-            
+            $IMDB = new IMDB($title);
+
+            if ($IMDB->isReady) {
+                $UR = array_filter(explode('/', $IMDB->getUrl()));
+
+                $data = [
+                    'movieID' => $UR[4],
+                    'title' => $IMDB->getTitle($bForceLocal = false),
+                    'release_year' => $IMDB->getYear(),
+                    'rating' => $IMDB->getRating(),
+                    'genre' => $IMDB->getGenre(),
+                    'URL' => $IMDB->getPoster($sSize = 'big', $bDownload = false)
+                ];
+
+                DB::table('imdb')->insert($data);
+
+                $result = iIMDB::where('title', $title)->get();
+
+                return Movie::collection($result);
+            } else {
+                echo 'Movie not found. 😞';
+            }
         }
     }
 
-    /**
-     * Show the form for creating a new comp.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function create(Request $request) {
-        
+    public function searchByYear($year)
+    {
+        $result = iIMDB::whereBetween('release_year', array($year - 1, $year + 1))->get();
+
+        if (count($result) > 0) {
+            return Movie::collection($result);
+        } else {
+            echo 'Movie not found. 😞';
+        }
     }
 
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function store(Request $request) {
-        //
+    public function searchByRating($rating)
+    {
+        $result = iIMDB::where('rating', $rating)->get();
+
+        if (count($result) > 0) {
+            return Movie::collection($result);
+        } else {
+            echo 'Movie not found. 😞';
+        }
     }
 
-    /**
-     * Display the specified resource.
-     *
-     * @param  \App\iIMDB  $iIMDB
-     * @return \Illuminate\Http\Response
-     */
-    public function show(iIMDB $iIMDB) {
-        //
-    }
+    public function searchByGenre($genre)
+    {
+        $result = iIMDB::where('genre', 'like', '%' . $genre . '%')->get();
 
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  \App\iIMDB  $iIMDB
-     * @return \Illuminate\Http\Response
-     */
-    public function edit(iIMDB $iIMDB) {
-        //
+        if (count($result) > 0) {
+            return Movie::collection($result);
+        } else {
+            echo 'Movie not found. 😞';
+        }
     }
 
     /**
      * Update the specified resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\iIMDB  $iIMDB
+     * @param  \Illuminate\Http\Request $request
+     * @param  \App\iIMDB $iIMDB
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, iIMDB $iIMDB) {
-        //
+    public function update(Request $request, iIMDB $iIMDB)
+    {
+        if (isset($request->rating)) {
+            $result = $request->isMethod('put') ? iIMDB::where('title', $request->title)->first() : new iIMDB;
+            //dd($result);
+            $result->rating = $request->rating;
+            $result->save();
+        }
+        if (isset($request->genre)) {
+            $result = $request->isMethod('put') ? iIMDB::where('title', $request->title)->first() : new iIMDB;
+            $result->genre = $result->genre . " / " . $request->genre;
+            $result->save();
+        }
     }
-
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  \App\iIMDB  $iIMDB
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy(iIMDB $iIMDB) {
-        //
-    }
-
 }
